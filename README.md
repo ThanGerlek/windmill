@@ -3,7 +3,7 @@
 ## Problem statement
 
 Let S be a set of at least two points in the plane. Assume that no three points are collinear.
-A windmill is a process that starts with a line l going thorugh a single point P \in S.
+A windmill is a process that starts with a line l going through a single point P ∈ S.
 The line rotates clockwise about a pivot P until the first time that the line meets some
 other point belonging to S. This point, Q, takes over as the new pivot,
 and the line now rotates clockwise about Q, until it next meets a point of S.
@@ -37,3 +37,7 @@ NL Proof:
 
 7. Show that this is sufficient.
    - "A 360 rotation back to start" is NOT sufficient.
+
+-- Guys: light blue or light purple tie, dark pants.
+-- Girls: light blue or light purple (solid or floral).
+-- Get an airbnb in Utah...?

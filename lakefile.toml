@@ -1,7 +1,7 @@
-name = "windmill"
+name = "Windmill"
 version = "0.1.0"
 keywords = ["math"]
-defaultTargets = ["windmill"]
+defaultTargets = ["Windmill"]
 
 [leanOptions]
 pp.unicode.fun = true # pretty-prints `fun a ↦ b`
@@ -15,4 +15,4 @@ scope = "leanprover-community"
 rev = "v4.34.0-rc1"
 
 [[lean_lib]]
-name = "windmill"
+name = "Windmill"
