@@ -24,6 +24,12 @@ def mem (l : DirectedLineRep) (p : Point) : Prop :=
 
 instance : Membership Point DirectedLineRep where mem := mem
 
+theorem pt_is_mem (l : DirectedLineRep) : l.pt ∈ l := by
+  -- change l.mem l.pt
+  -- unfold DirectedLineRep.mem
+  use 0
+  simp
+
 -- IsSameLine theorems
 
 def IsSameLine (l₁ l₂ : DirectedLineRep) : Prop :=
@@ -45,6 +51,27 @@ theorem sameline_trans : ∀ {x y z : DirectedLineRep},
   -- unfold DirectedLineRep.IsSameLine
   intro x y z hxy hyz p
   rw [hxy, hyz]
+
+theorem sameLine_pt_is_mem (l₁ l₂ : DirectedLineRep) (h : l₁.IsSameLine l₂) : l₁.pt ∈ l₂ := by
+  -- unfold DirectedLineRep.IsSameLine at h
+  let h := h l₁.pt
+  let h₁ := pt_is_mem l₁
+  exact Iff.mp h h₁
+
+-- rotate theorems
+
+noncomputable def rotate (l : DirectedLineRep) (θ : Real.Angle) : DirectedLineRep :=
+  mk l.pt (l.θ + θ)
+
+@[simp]
+theorem rotate_pt : ∀ {θ}, ((l : DirectedLineRep).rotate θ).pt = l.pt := by
+  unfold rotate
+  simp
+
+@[simp]
+theorem rotate_θ : ∀ {θ}, ((l : DirectedLineRep).rotate θ).θ = l.θ + θ := by
+  unfold rotate
+  simp
 
 -- Respects theorems
 
