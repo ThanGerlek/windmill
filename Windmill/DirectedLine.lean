@@ -2,10 +2,7 @@
 -- Assume that no three points are collinear.
 
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Angle
-
-structure Point where
-  x : ℝ
-  y : ℝ
+import Windmill.Defs
 
 -- DirectedLineRep
 
@@ -24,36 +21,26 @@ def mem (l : DirectedLineRep) (p : Point) : Prop :=
 
 instance : Membership Point DirectedLineRep where mem := mem
 
-theorem pt_is_mem (l : DirectedLineRep) : l.pt ∈ l := by
-  -- change l.mem l.pt
-  -- unfold DirectedLineRep.mem
-  use 0
-  simp
+theorem pt_is_mem (l : DirectedLineRep) : l.pt ∈ l := by use 0; simp
 
--- IsSameLine theorems
+-- equiv theorems
 
-def IsSameLine (l₁ l₂ : DirectedLineRep) : Prop :=
+def equiv (l₁ l₂ : DirectedLineRep) : Prop :=
   ∀ (p : Point), p ∈ l₁ ↔ p ∈ l₂
 
-theorem sameline_refl : ∀ (x : DirectedLineRep), x.IsSameLine x := by
-  -- unfold DirectedLineRep.IsSameLine
-  intro x p
-  simp
+theorem sameline_refl : ∀ (x : DirectedLineRep), x.equiv x := by intro a p; simp
 
-theorem sameline_symm : ∀ {x y : DirectedLineRep}, x.IsSameLine y → y.IsSameLine x := by
-  -- unfold DirectedLineRep.IsSameLine
+theorem sameline_symm : ∀ {x y : DirectedLineRep}, x.equiv y → y.equiv x := by
   intro x y h p
   rw [iff_comm_eq]
   exact h p
 
 theorem sameline_trans : ∀ {x y z : DirectedLineRep},
-  x.IsSameLine y → y.IsSameLine z → x.IsSameLine z := by
-  -- unfold DirectedLineRep.IsSameLine
+  x.equiv y → y.equiv z → x.equiv z := by
   intro x y z hxy hyz p
   rw [hxy, hyz]
 
-theorem sameLine_pt_is_mem (l₁ l₂ : DirectedLineRep) (h : l₁.IsSameLine l₂) : l₁.pt ∈ l₂ := by
-  -- unfold DirectedLineRep.IsSameLine at h
+theorem sameLine_pt_is_mem (l₁ l₂ : DirectedLineRep) (h : l₁.equiv l₂) : l₁.pt ∈ l₂ := by
   let h := h l₁.pt
   let h₁ := pt_is_mem l₁
   exact Iff.mp h h₁
@@ -65,26 +52,16 @@ noncomputable def rotate (l : DirectedLineRep) (θ : Real.Angle) : DirectedLineR
 
 @[simp]
 theorem rotate_pt : ∀ {θ}, ((l : DirectedLineRep).rotate θ).pt = l.pt := by
-  unfold rotate
-  simp
+  unfold rotate; simp
 
 @[simp]
 theorem rotate_θ : ∀ {θ}, ((l : DirectedLineRep).rotate θ).θ = l.θ + θ := by
-  unfold rotate
-  simp
+  unfold rotate; simp
 
--- Respects theorems
-
-theorem mem_respects (l₁ l₂ : DirectedLineRep)
-  (h : l₁.IsSameLine l₂) :
-  (p ∈ l₁) = (p ∈ l₂) := by
-  -- unfold IsSameLine at h
-  simp only [eq_iff_iff]
-  exact h p
-
+-- Instance Setoid
 
 instance : Setoid DirectedLineRep where
-  r := DirectedLineRep.IsSameLine
+  r := equiv
   iseqv := by
     constructor
     · exact sameline_refl
@@ -102,7 +79,11 @@ namespace DirectedLine
 def mem (l : DirectedLine) (p : Point) : Prop :=
   Quotient.lift
     (fun l => DirectedLineRep.mem l p)
-    (fun l₁ l₂ h => DirectedLineRep.mem_respects l₁ l₂ h)
+    (by
+      intro a b h
+      change ∀ (p : Point), a.mem p ↔ b.mem p at h
+      rw [←iff_eq_eq]
+      exact h p)
     l
 
 instance : Membership Point DirectedLine where mem := mem
@@ -111,4 +92,4 @@ def colinear (p q r : Point) := ∃ (l : DirectedLine), p∈l ∧ q∈l ∧ r∈
 
 end DirectedLine
 
--- #min_imports
+#min_imports

@@ -1,13 +1,7 @@
 -- Let S be a set of at least two points in the plane.
 -- Assume that no three points are collinear.
 
-import Mathlib
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Angle
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
-
-structure Point where
-  x : ℝ
-  y : ℝ
 
 structure Dir where
   x : ℝ
@@ -203,3 +197,5 @@ theorem to_from_angle : to_angle (from_angle θ) = θ := by
     exact cos_iff_range hn0
 
 end Dir
+
+#min_imports
