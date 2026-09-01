@@ -45,13 +45,19 @@ noncomputable def mk_pt_pt (p q : Point) (h : p ≠ q) : {l : DirectedLineRep //
 def equiv (l₁ l₂ : DirectedLineRep) : Prop :=
   ∀ (p : Point), p ∈ l₁ ↔ p ∈ l₂
 
+theorem equiv_r {l₁ l₂ : DirectedLineRep} (h : l₁.equiv l₂) : ∀ (p : Point), p ∈ l₁ ↔ p ∈ l₂ := by
+  intro p; unfold equiv at h; exact h p
+
+@[refl]
 theorem sameline_refl : ∀ (x : DirectedLineRep), x.equiv x := by intro a p; simp
 
+@[symm]
 theorem sameline_symm : ∀ {x y : DirectedLineRep}, x.equiv y → y.equiv x := by
   intro x y h p
   rw [iff_comm_eq]
   exact h p
 
+@[trans]
 theorem sameline_trans : ∀ {x y z : DirectedLineRep},
   x.equiv y → y.equiv z → x.equiv z := by
   intro x y z hxy hyz p
@@ -62,7 +68,7 @@ theorem sameLine_pt_is_mem (l₁ l₂ : DirectedLineRep) (h : l₁.equiv l₂) :
   let h₁ := pt_is_mem l₁
   exact Iff.mp h h₁
 
--- For any p in l, a line made from p and l.θ is also l.
+-- For any p in l, a line made from p (with same θ) is equivalent to l.
 theorem pt_independence {l : DirectedLineRep} {pt : Point} (h : pt ∈ l) : l.equiv (mk pt l.θ) := by
   sorry
 
@@ -81,7 +87,7 @@ theorem rotate_θ : ∀ {θ}, ((l : DirectedLineRep).rotate θ).θ = l.θ + θ :
 
 -- Instance Setoid
 
-instance : Setoid DirectedLineRep where
+instance instSetoidDirectedLineRep : Setoid DirectedLineRep where
   r := equiv
   iseqv := by
     constructor
@@ -111,6 +117,8 @@ def mem (l : DirectedLine) (p : Point) : Prop :=
     l
 
 instance : Membership Point DirectedLine where mem := mem
+
+-- constructors
 
 noncomputable def mk_pt_pt (p q : Point) (h : p ≠ q) : {l : DirectedLine // p∈l ∧ q∈l} :=
   let ⟨l, hl⟩ := DirectedLineRep.mk_pt_pt p q h
