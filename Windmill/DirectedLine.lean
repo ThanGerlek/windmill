@@ -72,6 +72,47 @@ theorem sameLine_pt_is_mem (l₁ l₂ : DirectedLineRep) (h : l₁.equiv l₂) :
 theorem pt_independence {l : DirectedLineRep} {pt : Point} (h : pt ∈ l) : l.equiv (mk pt l.θ) := by
   sorry
 
+lemma unique_angle_if_shared_root_and_point {l₁ l₂ : DirectedLineRep} {p : Point}
+(h_e_pt : l₁.pt = l₂.pt) (h_p_ne : p ≠ l₁.pt) (h_p_mem : p ∈ l₁ ∧ p ∈ l₂) : l₁.θ = l₂.θ := by
+  sorry
+
+theorem unique_line_with_two_points {l₁ l₂ : DirectedLineRep} {p q : Point} (h_p_ne_q : p ≠ q)
+(h_pq_in_1 : p ∈ l₁ ∧ q ∈ l₁) (h_pq_in_2 : p ∈ l₂ ∧ q ∈ l₂) : l₁.equiv l₂ := by
+  -- l₁p : line with angle 1 and point p
+  -- l₁  -?>  l₁p  -?>  l₁q  -?>  l₂q  -?>  l₂
+  let l₁p := DirectedLineRep.mk_pt_angle p l₁.θ
+  have h_1e1p : l₁.equiv l₁p := pt_independence h_pq_in_1.left
+  suffices l₁p.equiv l₂ by
+    exact sameline_trans h_1e1p this
+  -- l₁ → l₁p  -?>  l₁q  -?>  l₂q  -?>  l₂
+  let l₂q := DirectedLineRep.mk_pt_angle q l₂.θ
+  have h_2qe2 : l₂q.equiv l₂ := by
+    have h : l₂.equiv l₂q := pt_independence h_pq_in_2.right
+    symm; exact h
+  suffices l₁p.equiv l₂q by
+    exact sameline_trans this h_2qe2
+  -- l₁ → l₁p  -?>  l₁q  -?>  l₂q → l₂
+  let l₁q := DirectedLineRep.mk_pt_angle q l₁.θ
+  have h_q_in_l1p : q ∈ l₁p := by
+    have h := h_pq_in_1.right
+    rw [equiv_r h_1e1p] at h
+    exact h
+  have h : l₁p.equiv l₁q := pt_independence h_q_in_l1p
+  suffices l₁q.equiv l₂q by exact sameline_trans h this
+  -- l₁ → l₁p → l₁q  -?>  l₂q → l₂
+  suffices l₁.θ = l₂.θ by
+    unfold l₁q l₂q
+    rw[this]
+  -- l₁ → l₁p → l₁q → l₂q → l₂, assuming θ₁=θ₂
+  -- Build args for unique_angle_if_shared_root_and_point
+  apply @unique_angle_if_shared_root_and_point l₁q l₂q p
+  · trivial
+  · exact h_p_ne_q
+  · -- p ∈ l₁q ∧ p ∈ l₂q
+    have h₁ : p ∈ l₁q := by rw [←equiv_r h, ←equiv_r h_1e1p]; exact h_pq_in_1.left
+    have h₂ : p ∈ l₂q := by rw [equiv_r h_2qe2]; exact h_pq_in_2.left
+    exact And.intro h₁ h₂
+
 -- rotate theorems
 
 noncomputable def rotate (l : DirectedLineRep) (θ : Real.Angle) : DirectedLineRep :=
