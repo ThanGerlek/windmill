@@ -34,6 +34,8 @@ noncomputable def oangle (p q : Point) : Real.Angle := Orientation.oangle Point.
 
 noncomputable def angle (p q : Point) : Real.Angle := InnerProductGeometry.angle p q
 
+noncomputable def fromAngle (θ : Real.Angle) : Point := Point.mk θ.cos θ.sin
+
 -- theorems
 
 theorem inner_eq_cos_angle_of_norm_eq_one {x y : Point} (hx : ‖x‖ = 1) (hy : ‖y‖ = 1)
@@ -48,7 +50,5 @@ theorem inner_eq_norm_mul_norm_mul_cos_oangle (x y : Point)
   exact h
 
 end Point
-
-variable (v w : Point)
 
 #min_imports

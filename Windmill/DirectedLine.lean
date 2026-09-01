@@ -12,12 +12,12 @@ structure DirectedLineRep where
 
 namespace DirectedLineRep
 
+noncomputable def dir (l : DirectedLineRep) : Point := Point.fromAngle l.θ
+
 -- Membership
 
 def mem (l : DirectedLineRep) (p : Point) : Prop :=
-  ∃ (s : ℝ),
-      (l.pt.x + s*(Real.Angle.cos l.θ) = p.x)
-    ∧ (l.pt.y + s*(Real.Angle.sin l.θ) = p.y)
+  ∃ s : ℝ, l.pt + s • l.dir = p
 
 instance : Membership Point DirectedLineRep where mem := mem
 
@@ -62,6 +62,10 @@ theorem sameLine_pt_is_mem (l₁ l₂ : DirectedLineRep) (h : l₁.equiv l₂) :
   let h₁ := pt_is_mem l₁
   exact Iff.mp h h₁
 
+-- For any p in l, a line made from p and l.θ is also l.
+theorem pt_independence {l : DirectedLineRep} {pt : Point} (h : pt ∈ l) : l.equiv (mk pt l.θ) := by
+  sorry
+
 -- rotate theorems
 
 noncomputable def rotate (l : DirectedLineRep) (θ : Real.Angle) : DirectedLineRep :=
@@ -93,13 +97,8 @@ def DirectedLine := Quotient (inferInstance : Setoid DirectedLineRep)
 
 namespace DirectedLine
 
--- constructors
-
 def mk_pt_angle (p : Point) (θ : Real.Angle) : DirectedLine :=
   Quotient.mk _ (DirectedLineRep.mk_pt_angle p θ)
-
-noncomputable def mk_pt_pt (p q : Point) (h : p ≠ q) : DirectedLine :=
-  Quotient.mk _ (DirectedLineRep.mk_pt_pt p q h)
 
 def mem (l : DirectedLine) (p : Point) : Prop :=
   Quotient.lift
@@ -113,8 +112,12 @@ def mem (l : DirectedLine) (p : Point) : Prop :=
 
 instance : Membership Point DirectedLine where mem := mem
 
-def colinear (p q r : Point) :=
-  (p ≠ q ∧ q ≠ r ∧ r ≠ p) ∧ ∃ (l : DirectedLine), p∈l ∧ q∈l ∧ r∈l
+noncomputable def mk_pt_pt (p q : Point) (h : p ≠ q) : {l : DirectedLine // p∈l ∧ q∈l} :=
+  let ⟨l, hl⟩ := DirectedLineRep.mk_pt_pt p q h
+  ⟨Quotient.mk _ l, hl⟩
+
+def colinear (p q r : Point) (hpq : p ≠ q) (hqr : q ≠ r) (hpr : p ≠ r) :=
+∃ l : DirectedLine, p∈l ∧ q∈l ∧ r∈l
 
 end DirectedLine
 
