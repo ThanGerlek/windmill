@@ -124,8 +124,45 @@ noncomputable def mk_pt_pt (p q : Point) (h : p ≠ q) : {l : DirectedLine // p�
   let ⟨l, hl⟩ := DirectedLineRep.mk_pt_pt p q h
   ⟨Quotient.mk _ l, hl⟩
 
-def colinear (p q r : Point) (hpq : p ≠ q) (hqr : q ≠ r) (hpr : p ≠ r) :=
-∃ l : DirectedLine, p∈l ∧ q∈l ∧ r∈l
+-- colinearity
+
+def colinear (p q r : Point) (_hpq : p ≠ q) (_hqr : q ≠ r) (_hpr : p ≠ r) :=
+  ∃ l : DirectedLine, p∈l ∧ q∈l ∧ r∈l
+
+def fin_colinear (p q r : Point) (hpq : p ≠ q) (hqr : q ≠ r) (hpr : p ≠ r) :=
+  let ⟨lpq, _⟩ := DirectedLine.mk_pt_pt p q hpq
+  let ⟨lqr, _⟩ := DirectedLine.mk_pt_pt q r hqr
+  let ⟨lpr, _⟩ := DirectedLine.mk_pt_pt p r hpr
+  (p ∈ lqr) ∨ (q ∈ lpr) ∨ (r ∈ lpq)
+
+lemma colinear_if_fin_colinear {p q r : Point} {hpq : p ≠ q} {hqr : q ≠ r} {hpr : p ≠ r} :
+fin_colinear p q r hpq hqr hpr → colinear p q r hpq hqr hpr := by
+  unfold colinear fin_colinear
+  let ⟨lpq, hlpq⟩ := DirectedLine.mk_pt_pt p q hpq
+  let ⟨lqr, hlqr⟩ := DirectedLine.mk_pt_pt q r hqr
+  let ⟨lpr, hlpr⟩ := DirectedLine.mk_pt_pt p r hpr
+  intro h
+  change p ∈ lqr ∨ q ∈ lpr ∨ r ∈ lpq at h
+  rcases h with h1 | h2 | h3
+  · use lqr
+  · use lpr
+    exact And.intro (hlpr.left) (And.intro h2 hlpr.right)
+  · use lpq
+    exact And.intro (hlpq.left) (And.intro hlpq.right h3)
+
+lemma fin_colinear_if_colinear {p q r : Point} {hpq : p ≠ q} {hqr : q ≠ r} {hpr : p ≠ r} :
+colinear p q r hpq hqr hpr → fin_colinear p q r hpq hqr hpr := by
+  unfold colinear fin_colinear
+  simp only [forall_exists_index, and_imp]
+  let ⟨lpq, hlpq⟩ := DirectedLine.mk_pt_pt p q hpq
+  let ⟨lqr, hlqr⟩ := DirectedLine.mk_pt_pt q r hqr
+  let ⟨lpr, hlpr⟩ := DirectedLine.mk_pt_pt p r hpr
+  intro l hlp hlq hlr
+  sorry  -- Requires uniqueness of two points defining a line
+
+theorem fin_colinear_iff_colinear {p q r : Point} {hpq : p ≠ q} {hqr : q ≠ r} {hpr : p ≠ r} :
+colinear p q r hpq hqr hpr ↔ fin_colinear p q r hpq hqr hpr :=
+  Iff.intro fin_colinear_if_colinear colinear_if_fin_colinear
 
 end DirectedLine
 
