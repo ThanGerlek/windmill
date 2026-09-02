@@ -76,25 +76,26 @@ lemma unique_angle_if_shared_root_and_point {l₁ l₂ : DirectedLineRep} {p : P
 (h_e_pt : l₁.pt = l₂.pt) (h_p_ne : p ≠ l₁.pt) (h_p_mem : p ∈ l₁ ∧ p ∈ l₂) : l₁.θ = l₂.θ := by
   sorry
 
-theorem unique_line_with_two_points {l₁ l₂ : DirectedLineRep} {p q : Point} (h_p_ne_q : p ≠ q)
-(h_pq_in_1 : p ∈ l₁ ∧ q ∈ l₁) (h_pq_in_2 : p ∈ l₂ ∧ q ∈ l₂) : l₁.equiv l₂ := by
+theorem unique_line_with_two_points {l₁ l₂ : DirectedLineRep} {p q : Point} (h_ne : p ≠ q)
+(h_p_in_1 : p ∈ l₁)  (h_q_in_1 : q ∈ l₁) (h_p_in_2 : p ∈ l₂) (h_q_in_2 : q ∈ l₂)
+: l₁.equiv l₂ := by
   -- l₁p : line with angle 1 and point p
   -- l₁  -?>  l₁p  -?>  l₁q  -?>  l₂q  -?>  l₂
   let l₁p := DirectedLineRep.mk_pt_angle p l₁.θ
-  have h_1e1p : l₁.equiv l₁p := pt_independence h_pq_in_1.left
+  have h_1e1p : l₁.equiv l₁p := pt_independence h_p_in_1
   suffices l₁p.equiv l₂ by
     exact sameline_trans h_1e1p this
   -- l₁ → l₁p  -?>  l₁q  -?>  l₂q  -?>  l₂
   let l₂q := DirectedLineRep.mk_pt_angle q l₂.θ
   have h_2qe2 : l₂q.equiv l₂ := by
-    have h : l₂.equiv l₂q := pt_independence h_pq_in_2.right
+    have h : l₂.equiv l₂q := pt_independence h_q_in_2
     symm; exact h
   suffices l₁p.equiv l₂q by
     exact sameline_trans this h_2qe2
   -- l₁ → l₁p  -?>  l₁q  -?>  l₂q → l₂
   let l₁q := DirectedLineRep.mk_pt_angle q l₁.θ
   have h_q_in_l1p : q ∈ l₁p := by
-    have h := h_pq_in_1.right
+    have h := h_q_in_1
     rw [equiv_r h_1e1p] at h
     exact h
   have h : l₁p.equiv l₁q := pt_independence h_q_in_l1p
@@ -107,10 +108,10 @@ theorem unique_line_with_two_points {l₁ l₂ : DirectedLineRep} {p q : Point} 
   -- Build args for unique_angle_if_shared_root_and_point
   apply @unique_angle_if_shared_root_and_point l₁q l₂q p
   · trivial
-  · exact h_p_ne_q
+  · exact h_ne
   · -- p ∈ l₁q ∧ p ∈ l₂q
-    have h₁ : p ∈ l₁q := by rw [←equiv_r h, ←equiv_r h_1e1p]; exact h_pq_in_1.left
-    have h₂ : p ∈ l₂q := by rw [equiv_r h_2qe2]; exact h_pq_in_2.left
+    have h₁ : p ∈ l₁q := by rw [←equiv_r h, ←equiv_r h_1e1p]; exact h_p_in_1
+    have h₂ : p ∈ l₂q := by rw [equiv_r h_2qe2]; exact h_p_in_2
     exact And.intro h₁ h₂
 
 -- rotate theorems
@@ -140,30 +141,55 @@ end DirectedLineRep
 
 -- DirectedLine
 
-def DirectedLine := Quotient (inferInstance : Setoid DirectedLineRep)
+abbrev DirectedLine := Quotient (inferInstance : Setoid DirectedLineRep)
 
 namespace DirectedLine
 
-def mk_pt_angle (p : Point) (θ : Real.Angle) : DirectedLine :=
-  Quotient.mk _ (DirectedLineRep.mk_pt_angle p θ)
-
 def mem (l : DirectedLine) (p : Point) : Prop :=
-  Quotient.lift
-    (fun l => DirectedLineRep.mem l p)
-    (by
+  Quotient.lift  -- Lifts function f, with argument p, through l
+    (fun r => DirectedLineRep.mem r p)  -- What the non-lifted f returns for any rep
+    (by  -- Proof that ∀ (a b : Rep), a ≈ b → f a = f b
       intro a b h
       change ∀ (p : Point), a.mem p ↔ b.mem p at h
       rw [←iff_eq_eq]
       exact h p)
-    l
+    l  -- The actual non-rep object to call the function on
 
 instance : Membership Point DirectedLine where mem := mem
 
 -- constructors
 
+def mk_pt_angle (p : Point) (θ : Real.Angle) : DirectedLine :=
+  Quotient.mk _ (DirectedLineRep.mk_pt_angle p θ)
+
 noncomputable def mk_pt_pt (p q : Point) (h : p ≠ q) : {l : DirectedLine // p∈l ∧ q∈l} :=
   let ⟨l, hl⟩ := DirectedLineRep.mk_pt_pt p q h
   ⟨Quotient.mk _ l, hl⟩
+
+-- lifted theorems
+
+theorem unique_line_with_two_points {l₁ l₂ : DirectedLine} {p q : Point} (h_ne : p ≠ q)
+(h_p_in_1 : p ∈ l₁) (h_q_in_1 : q ∈ l₁) (h_p_in_2 : p ∈ l₂) (h_q_in_2 : q ∈ l₂)
+: l₁ = l₂ := by
+  induction l₁, l₂ using Quotient.inductionOn₂ with
+  | _ r₁ r₂ =>
+    suffices r₁ ≈ r₂ by exact Quotient.sound this
+    change r₁.equiv r₂
+    have h_in : (p ∈ ⟦r₁⟧ ∧ q ∈ ⟦r₁⟧) ∧ (p ∈ ⟦r₂⟧ ∧ q ∈ ⟦r₂⟧) :=
+      ⟨⟨h_p_in_1, h_q_in_1⟩, ⟨h_p_in_2, h_q_in_2⟩⟩
+    suffices h_in : (p ∈ r₁ ∧ q ∈ r₁) ∧ (p ∈ r₂ ∧ q ∈ r₂) by
+      exact DirectedLineRep.unique_line_with_two_points
+        h_ne
+        h_in.left.left
+        h_in.left.right
+        h_in.right.left
+        h_in.right.right
+    --
+    change (DirectedLine.mem ⟦r₁⟧ p ∧ DirectedLine.mem ⟦r₁⟧ q)
+      ∧ (DirectedLine.mem ⟦r₂⟧ p ∧ DirectedLine.mem ⟦r₂⟧ q) at h_in
+    unfold DirectedLine.mem at h_in
+    simp only [Quotient.lift_mk] at h_in
+    exact h_in
 
 -- colinearity
 
@@ -195,11 +221,13 @@ lemma fin_colinear_if_colinear {p q r : Point} {hpq : p ≠ q} {hqr : q ≠ r} {
 colinear p q r hpq hqr hpr → fin_colinear p q r hpq hqr hpr := by
   unfold colinear fin_colinear
   simp only [forall_exists_index, and_imp]
-  let ⟨lpq, hlpq⟩ := DirectedLine.mk_pt_pt p q hpq
-  let ⟨lqr, hlqr⟩ := DirectedLine.mk_pt_pt q r hqr
-  let ⟨lpr, hlpr⟩ := DirectedLine.mk_pt_pt p r hpr
   intro l hlp hlq hlr
-  sorry  -- Requires uniqueness of two points defining a line
+  let ⟨lqr, hlqr⟩ := DirectedLine.mk_pt_pt q r hqr
+  simp only
+  have he : lqr = l := DirectedLine.unique_line_with_two_points hqr
+    hlqr.left hlqr.right hlq hlr
+  rw [he]
+  exact Or.inl hlp
 
 theorem fin_colinear_iff_colinear {p q r : Point} {hpq : p ≠ q} {hqr : q ≠ r} {hpr : p ≠ r} :
 colinear p q r hpq hqr hpr ↔ fin_colinear p q r hpq hqr hpr :=
