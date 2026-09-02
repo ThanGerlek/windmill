@@ -32,12 +32,31 @@ noncomputable def mk_pt_pt (p q : Point) (h : p ≠ q) : {l : DirectedLineRep //
   let l : DirectedLineRep := DirectedLineRep.mk p θ
   have h₁ : p∈l := pt_is_mem l
   have h₂ : q∈l := by
-    have h := Point.inner_eq_norm_mul_norm_mul_cos_oangle p q
     change DirectedLineRep.mem l q
     unfold DirectedLineRep.mem
-    simp [l]
 
-    sorry
+    -- TODO Convert to:
+    -- suffices hs : ∃ s, (s * l.θ.cos = q.x - p.x) ∧ (s * l.θ.sin = q.y - p.y)
+
+    have h_cos_n0 : l.θ.cos ≠ 0 := by sorry -- TODO! FALSE ASSUMPTION
+
+    let s := (q.x - p.x) / l.θ.cos
+
+    have hs : s • Point.mk l.θ.cos l.θ.sin = q - p := by
+      let s_cos : s * l.θ.cos = q.x - p.x := by grind -- Uses h_cos_n0
+      let s_sin : s * l.θ.sin = q.y - p.y := by
+          -- TODO, dunno how (prolly requires h_sin_n0)
+        sorry
+      ext i; fin_cases i <;> assumption
+
+    suffices hk : s • l.dir = q - p by
+      use s
+      have hk := congrArg (p + ·) hk; simp only [add_sub_cancel] at hk
+      rw [(by simp [l] : p = l.pt)] at hk
+      exact hk
+
+    unfold dir Point.fromAngle
+    exact hs
   ⟨l, And.intro h₁ h₂⟩
 
 -- equiv theorems
