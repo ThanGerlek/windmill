@@ -2,11 +2,8 @@
 -- Assume that no three points are collinear.
 
 import Mathlib.Geometry.Euclidean.Angle.Oriented.Basic
-open scoped InnerProductSpace
 
--- structure Point where
---   x : ℝ
---   y : ℝ
+open scoped InnerProductSpace
 
 abbrev Point := EuclideanSpace ℝ (Fin 2)
 
@@ -30,24 +27,38 @@ instance instPointFinrankFact : Fact (Module.finrank ℝ Point = 2) := ⟨finran
 noncomputable def orientation : Orientation ℝ Point (Fin 2) :=
   (EuclideanSpace.basisFun (Fin 2) ℝ).toBasis.orientation
 
-noncomputable def oangle (p q : Point) : Real.Angle := Orientation.oangle Point.orientation p q
+noncomputable def oangle_btw (p q : Point) (_ : p ≠ 0) (_ : q ≠ 0) : Real.Angle :=
+  Orientation.oangle Point.orientation p q
 
-noncomputable def angle (p q : Point) : Real.Angle := InnerProductGeometry.angle p q
+noncomputable def oangle (p : Point) (h : p ≠ 0) : Real.Angle :=
+  oangle_btw (Point.mk 1 0) p (by simp) h
 
 noncomputable def fromAngle (θ : Real.Angle) : Point := Point.mk θ.cos θ.sin
 
--- theorems
+noncomputable def rot (p : Point) (θ : Real.Angle) : Point :=
+  mk (p.x * θ.cos - p.y * θ.sin) (p.x * θ.sin + p.y * θ.cos)
 
-theorem inner_eq_cos_angle_of_norm_eq_one {x y : Point} (hx : ‖x‖ = 1) (hy : ‖y‖ = 1)
-: x.dot y = Real.cos (InnerProductGeometry.angle x y) :=
-  InnerProductGeometry.inner_eq_cos_angle_of_norm_eq_one hx hy
+-- simp theorems
 
 @[simp]
-theorem inner_eq_norm_mul_norm_mul_cos_oangle (x y : Point)
-: x.dot y = ‖x‖ * ‖y‖ * (x.oangle y).cos := by
-  let h := Orientation.inner_eq_norm_mul_norm_mul_cos_oangle Point.orientation x y
-  change x.dot y = ‖x‖ * ‖y‖ * (x.oangle y).cos at h
-  exact h
+theorem simp_mk_x {x y : ℝ} : (mk x y).x = x := by rfl
+@[simp]
+theorem simp_mk_y {x y : ℝ} : (mk x y).y = y := by rfl
+
+@[simp]
+theorem simp_mk_smul {s x y : ℝ} : s • Point.mk x y = Point.mk (s * x) (s * y) := by
+  unfold mk
+  change s • !₂[x, y] = !₂[s * x, s * y]
+  ext i
+  fin_cases i <;> simp
+
+-- angle theorems
+
+theorem x_eq_rcosθ (p : Point) (h : p ≠ 0) : p.x = ‖p‖ * (p.oangle h).cos := by
+  sorry
+
+theorem y_eq_rsinθ (p : Point) (h : p ≠ 0) : p.y = ‖p‖ * (p.oangle h).sin := by
+  sorry
 
 end Point
 

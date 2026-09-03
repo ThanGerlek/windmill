@@ -1,7 +1,6 @@
 -- Let S be a set of at least two points in the plane.
 -- Assume that no three points are collinear.
 
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Angle
 import Windmill.Defs
 
 -- DirectedLineRep
@@ -27,36 +26,82 @@ theorem pt_is_mem (l : DirectedLineRep) : l.pt ∈ l := by use 0; simp
 
 def mk_pt_angle := mk
 
-noncomputable def mk_pt_pt (p q : Point) (h : p ≠ q) : {l : DirectedLineRep // p∈l ∧ q∈l} :=
-  let θ : Real.Angle := p.oangle (q - p)
+noncomputable def mk_pt_pt (p q : Point) (h_distinct : p ≠ q)
+: {l : DirectedLineRep // p∈l ∧ q∈l} :=
+  have h_distinct : q - p ≠ 0 := by grind
+  let θ : Real.Angle := (q - p).oangle h_distinct
   let l : DirectedLineRep := DirectedLineRep.mk p θ
+  have hθ : l.θ = (q - p).oangle h_distinct := by rfl
+  have hpt : l.pt = p := by rfl
   have h₁ : p∈l := pt_is_mem l
+--
   have h₂ : q∈l := by
     change DirectedLineRep.mem l q
     unfold DirectedLineRep.mem
-
-    -- TODO Convert to:
-    -- suffices hs : ∃ s, (s * l.θ.cos = q.x - p.x) ∧ (s * l.θ.sin = q.y - p.y)
-
-    have h_cos_n0 : l.θ.cos ≠ 0 := by sorry -- TODO! FALSE ASSUMPTION
-
-    let s := (q.x - p.x) / l.θ.cos
-
-    have hs : s • Point.mk l.θ.cos l.θ.sin = q - p := by
-      let s_cos : s * l.θ.cos = q.x - p.x := by grind -- Uses h_cos_n0
-      let s_sin : s * l.θ.sin = q.y - p.y := by
-          -- TODO, dunno how (prolly requires h_sin_n0)
-        sorry
-      ext i; fin_cases i <;> assumption
-
-    suffices hk : s • l.dir = q - p by
-      use s
-      have hk := congrArg (p + ·) hk; simp only [add_sub_cancel] at hk
-      rw [(by simp [l] : p = l.pt)] at hk
-      exact hk
-
-    unfold dir Point.fromAngle
-    exact hs
+    let s : ℝ := ((q - p).rot (-l.θ)).x
+    use s
+    have hs : s = ((q - p).rot (-l.θ)).x := by rfl
+--
+    rw [hs]
+--
+    unfold Point.rot
+    simp only [Real.Angle.cos_neg, Real.Angle.sin_neg, mul_neg, sub_neg_eq_add, Point.simp_mk_x]
+--
+    change l.pt + ((q.x - p.x) * l.θ.cos + (q.y - p.y) * l.θ.sin) • l.dir = q
+--
+    unfold dir
+    unfold Point.fromAngle
+    simp only [Point.simp_mk_smul]
+--
+    -- Create some lemmas for the final calc
+    have hcos : q.x - p.x = ‖q - p‖ * l.θ.cos := by
+      have h := Point.x_eq_rcosθ (q - p) h_distinct
+      rw [←hθ] at h
+      simp only [PiLp.sub_apply] at h
+      change q.x - p.x = ‖q - p‖ * l.θ.cos at h
+      exact h
+    have hsin : q.y-p.y = ‖q-p‖ * l.θ.sin := by
+      have h := Point.y_eq_rsinθ (q - p) h_distinct
+      rw [←hθ] at h
+      simp only [PiLp.sub_apply] at h
+      change q.y - p.y = ‖q - p‖ * l.θ.sin at h
+      exact h
+--
+    have h_cos_sq : l.θ.cos*l.θ.cos = 1 - l.θ.sin*l.θ.sin := by
+      have h := Real.Angle.cos_sq_add_sin_sq l.θ; linarith
+    have h_sin_sq : l.θ.sin*l.θ.sin = 1 - l.θ.cos*l.θ.cos := by
+      have h := Real.Angle.cos_sq_add_sin_sq l.θ; linarith
+--
+    have h_pmq : q - p = Point.mk (q.x - p.x) (q.y - p.y) := by ext i; fin_cases i <;> simp
+--
+    -- Just for readability
+    let px := p.x
+    let py := p.y
+    let qx := q.x
+    let qy := q.y
+    let cs := l.θ.cos
+    let sn := l.θ.sin
+    change l.pt + Point.mk (((qx-px)*cs + (qy-py)*sn) * cs) (((qx-px)*cs + (qy-py)*sn) * sn) = q
+--
+    calc l.pt + Point.mk (((qx-px)*cs + (qy-py)*sn) * cs)
+                         (((qx-px)*cs + (qy-py)*sn) * sn)
+     _ = l.pt + Point.mk ((qx-px)*cs*cs + (qy-py)*sn*cs)
+                         ((qx-px)*cs*sn + (qy-py)*sn*sn) := by ring_nf
+     _ = l.pt + Point.mk (‖q-p‖*cs*cs*cs + ‖q-p‖*sn*sn*cs)
+                         (‖q-p‖*cs*cs*sn + ‖q-p‖*sn*sn*sn) := by rw [hcos, hsin]
+     _ = l.pt + Point.mk (‖q-p‖*cs*cs*cs + ‖q-p‖*(sn*sn)*cs)
+                         (‖q-p‖*(cs*cs)*sn + ‖q-p‖*sn*sn*sn) := by ring_nf
+     _ = l.pt + Point.mk (‖q-p‖*cs*cs*cs + ‖q-p‖*(1-cs*cs)*cs)
+                         (‖q-p‖*(1-sn*sn)*sn + ‖q-p‖*sn*sn*sn) := by rw [h_cos_sq, h_sin_sq]; simp
+     _ = l.pt + Point.mk (‖q-p‖*cs*cs*cs + ‖q-p‖*cs*(1-cs*cs))
+                         (‖q-p‖*sn*(1-sn*sn) + ‖q-p‖*sn*sn*sn) := by ring_nf
+     _ = l.pt + Point.mk (‖q-p‖*cs*cs*cs + ‖q-p‖*cs - ‖q-p‖*cs*cs*cs)
+                         (‖q-p‖*sn - ‖q-p‖*sn*sn*sn + ‖q-p‖*sn*sn*sn) := by ring_nf
+     _ = l.pt + Point.mk (‖q-p‖*cs) (‖q-p‖*sn) := by ring_nf
+     _ = l.pt + Point.mk (qx-px) (qy-py) := by rw [hcos, hsin]
+     _ = l.pt + q - p := by rw [←h_pmq]; grind
+     _ = p + q - p := by rw [hpt]
+     _ = q := by grind
   ⟨l, And.intro h₁ h₂⟩
 
 -- equiv theorems
@@ -96,7 +141,7 @@ lemma unique_angle_if_shared_root_and_point {l₁ l₂ : DirectedLineRep} {p : P
   sorry
 
 theorem unique_line_with_two_points {l₁ l₂ : DirectedLineRep} {p q : Point} (h_ne : p ≠ q)
-(h_p_in_1 : p ∈ l₁)  (h_q_in_1 : q ∈ l₁) (h_p_in_2 : p ∈ l₂) (h_q_in_2 : q ∈ l₂)
+(h_p_in_1 : p ∈ l₁) (h_q_in_1 : q ∈ l₁) (h_p_in_2 : p ∈ l₂) (h_q_in_2 : q ∈ l₂)
 : l₁.equiv l₂ := by
   -- l₁p : line with angle 1 and point p
   -- l₁  -?>  l₁p  -?>  l₁q  -?>  l₂q  -?>  l₂
